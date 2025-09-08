@@ -100,70 +100,70 @@ app.use(express.json());
 
 // Connect to Supabase Postgres
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, // Supabase requires SSL
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }, // Supabase requires SSL
 });
 
 // Create table if not exists (Postgres syntax)
 (async () => {
-  try {
+    try {
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS jobs (
+        CREATE TABLE IF NOT EXISTS jobs (
         id SERIAL PRIMARY KEY,
-        title TEXT,
-        company TEXT,
-        location TEXT,
-        salaryRange TEXT,
-        jobType TEXT
-      )
+        title VARCHAR(255),
+        company VARCHAR(255),
+        location VARCHAR(255),
+        salaryRange VARCHAR(100),
+        jobType VARCHAR(100)
+        );
     `);
-    console.log("Connected to Supabase Postgres");
-  } catch (err) {
-    console.error("Error creating table:", err.message);
-  }
+        console.log("Connected to Supabase Postgres");
+    } catch (err) {
+        console.error("Error creating table:", err.message);
+    }
 })();
 
 app.get("/", (req, res) => {
-  res.send("Welcome to Job Updater API");
+    res.send("Welcome to Job Updater API");
 });
 
 // API: Get all jobs
 app.get("/jobs", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM jobs");
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    try {
+        const result = await pool.query("SELECT * FROM jobs");
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // API: Add a job
 app.post("/jobs", async (req, res) => {
-  const { title, company, location, salaryRange, jobType } = req.body;
+    const { title, company, location, salaryRange, jobType } = req.body;
 
-  try {
-    // Check if job already exists
-    const existing = await pool.query(
-      "SELECT * FROM jobs WHERE title = $1 AND company = $2 AND location = $3",
-      [title, company, location]
-    );
+    try {
+        // Check if job already exists
+        const existing = await pool.query(
+            "SELECT * FROM jobs WHERE title = $1 AND company = $2 AND location = $3",
+            [title, company, location]
+        );
 
-    if (existing.rows.length > 0) {
-      return res.status(400).json({ error: "Job already exists!" });
+        if (existing.rows.length > 0) {
+            return res.status(400).json({ error: "Job already exists!" });
+        }
+
+        // Insert new job
+        const result = await pool.query(
+            "INSERT INTO jobs (title, company, location, salaryRange, jobType) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+            [title, company, location, salaryRange, jobType]
+        );
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-
-    // Insert new job
-    const result = await pool.query(
-      "INSERT INTO jobs (title, company, location, salaryRange, jobType) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [title, company, location, salaryRange, jobType]
-    );
-
-    res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
 });
 
 app.listen(4140, () =>
-  console.log("Server running on http://localhost:4140")
+    console.log("Server running on http://localhost:4140")
 );
