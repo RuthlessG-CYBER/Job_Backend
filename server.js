@@ -59,8 +59,9 @@ app.post("/jobs", (req, res) => {
                 salaryRange,
                 jobType,
             });
+            res.body.save();
         }
     );
 });
 
-app.listen(4040, () => console.log("Server running on http://10.0.2.2:4040"));
+app.listen(4040, () => console.log("Server running on http://localhost:4040"));
