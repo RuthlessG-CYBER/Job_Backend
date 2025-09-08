@@ -44,24 +44,43 @@ app.get("/jobs", (req, res) => {
 // API: Add a job
 app.post("/jobs", (req, res) => {
     const { title, company, location, salaryRange, jobType } = req.body;
-    db.run(
-        "INSERT INTO jobs (title, company, location, salaryRange, jobType) VALUES (?, ?, ?, ?, ?)",
-        [title, company, location, salaryRange, jobType],
-        function (err) {
+
+    // Check if job already exists
+    db.get(
+        "SELECT * FROM jobs WHERE title = ? AND company = ? AND location = ?",
+        [title, company, location],
+        (err, row) => {
             if (err) {
                 return res.status(500).json({ error: err.message });
             }
-            res.json({
-                id: this.lastID,
-                title,
-                company,
-                location,
-                salaryRange,
-                jobType,
-            });
-            res.body.save();
+
+            if (row) {
+                // Job already exists
+                return res.status(400).json({ error: "Job already exists!" });
+            }
+
+            // Insert if not found
+            db.run(
+                "INSERT INTO jobs (title, company, location, salaryRange, jobType) VALUES (?, ?, ?, ?, ?)",
+                [title, company, location, salaryRange, jobType],
+                function (err) {
+                    if (err) {
+                        return res.status(500).json({ error: err.message });
+                    }
+
+                    res.json({
+                        id: this.lastID,
+                        title,
+                        company,
+                        location,
+                        salaryRange,
+                        jobType,
+                    });
+                }
+            );
         }
     );
 });
+
 
 app.listen(4040, () => console.log("Server running on http://localhost:4040"));
