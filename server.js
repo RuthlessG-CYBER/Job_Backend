@@ -26,12 +26,12 @@ const db = new sqlite3.Database("./jobdb.sqlite", (err) => {
     }
 });
 
-
+// This is default route
 app.get("/", (req, res) => {
     res.send("Welcome to Job Updater API");
 })
 
-// API: Get all jobs
+// Get all jobs from this endpoint
 app.get("/jobs", (req, res) => {
     db.all("SELECT * FROM jobs", [], (err, rows) => {
         if (err) {
@@ -45,7 +45,7 @@ app.get("/jobs", (req, res) => {
 app.post("/jobs", (req, res) => {
     const { title, company, location, salaryRange, jobType } = req.body;
 
-    // Check if job already exists
+    
     db.get(
         "SELECT * FROM jobs WHERE title = ? AND company = ? AND location = ?",
         [title, company, location],
@@ -55,11 +55,9 @@ app.post("/jobs", (req, res) => {
             }
 
             if (row) {
-                // Job already exists
                 return res.status(400).json({ error: "Job already exists!" });
             }
 
-            // Insert if not found
             db.run(
                 "INSERT INTO jobs (title, company, location, salaryRange, jobType) VALUES (?, ?, ?, ?, ?)",
                 [title, company, location, salaryRange, jobType],
@@ -81,6 +79,23 @@ app.post("/jobs", (req, res) => {
         }
     );
 });
+// API: Delete a job by id
+app.delete("/jobs/:id", (req, res) => {
+    const jobId = req.params.id;
+
+    db.run("DELETE FROM jobs WHERE id = ?", [jobId], function (err) {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+
+        if (this.changes === 0) {
+            return res.status(404).json({ error: "Job not found" });
+        }
+
+        res.json({ message: "Job deleted successfully", id: jobId });
+    });
+});
+
 
 
 app.listen(4140, () => console.log("Server running on http://localhost:4140"));
