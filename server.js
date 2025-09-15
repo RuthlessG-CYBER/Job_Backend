@@ -96,6 +96,38 @@ app.delete("/jobs/:id", (req, res) => {
     });
 });
 
+// API: Update a job by id
+app.put("/jobs/:id", (req, res) => {
+    const jobId = req.params.id;
+    const { title, company, location, salaryRange, jobType } = req.body;
+
+    db.run(
+        `UPDATE jobs 
+         SET title = ?, company = ?, location = ?, salaryRange = ?, jobType = ? 
+         WHERE id = ?`,
+        [title, company, location, salaryRange, jobType, jobId],
+        function (err) {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
+
+            if (this.changes === 0) {
+                return res.status(404).json({ error: "Job not found" });
+            }
+
+            res.json({
+                message: "Job updated successfully",
+                id: jobId,
+                title,
+                company,
+                location,
+                salaryRange,
+                jobType,
+            });
+        }
+    );
+});
+
 
 
 app.listen(4140, () => console.log("Server running on http://localhost:4140"));
